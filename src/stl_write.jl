@@ -32,7 +32,7 @@ function write_designed_stl(i::EABM.Articulation, solid::Solid, state::EABM.Stat
     end
 end
 function write_prismatic_stl(i::EABM.Articulation, s::EABM.StateHarness, f)
-    if (i.parent.body_number == 0) || type(i.parent.properties.stl_properties) != type(p)
+    if (i.parent.body_number == 0) || typeof(i.parent.properties.stl_properties) != typeof(i.properties.stl_properties)
         root_vertices = i.properties.stl_properties.cross_section;
         tip_vertices = i.properties.stl_properties.cross_section;
 
@@ -45,7 +45,7 @@ function write_prismatic_stl(i::EABM.Articulation, s::EABM.StateHarness, f)
         do_root_face = true;
         do_tip_face = true;
         
-    elseif type(i.parent.properties.stl_properties) == type(p)
+    elseif typeof(i.parent.properties.stl_properties) == typeof(i.properties.stl_properties)
         root_vertices = i.parent.properties.stl_properties.cross_section;
         tip_vertices = i.properties.stl_properties.cross_section
 
@@ -60,11 +60,11 @@ function write_prismatic_stl(i::EABM.Articulation, s::EABM.StateHarness, f)
     end
 
     for c in i.children
-        do_tip_face = do_tip_face && !(type(c.properties.stl_properties) == type(p))
+        do_tip_face = do_tip_face && !(typeof(c.properties.stl_properties) == typeof(i.properties.stl_properties))
     end
 
-    root_vertices = root_loc .+ (root_rot[1:3,1:3] * root_vertices);
-    tip_vertices = tip_loc .+ (tip_rot[1:3,1:3] * tip_vertices);
+    root_vertices = root_loc .+ (root_rot[1:3,1:3]' * root_vertices);
+    tip_vertices = tip_loc .+ (tip_rot[1:3,1:3]' * tip_vertices);
 
     write_prism_stl(f, root_vertices, tip_vertices, do_root_face, do_tip_face);
 
@@ -73,23 +73,23 @@ end
 
 function write_prism_stl(file, rv, tv, drf, dtf)
     if drf
-        for f = 2:size(rv,1)-1
-            writefacet(file, rv[1,:],rv[f,:],rv[f+1,:]);
+        for f = 2:size(rv,2)-1
+            writefacet(file, rv[:,1],rv[:,f],rv[:,f+1]);
         end
     end
 
-    for df in 1:size(tv,1)
+    for df in 1:size(tv,2)
         dfe = df+1
-        if dfe > size(tv,1)
+        if dfe > size(tv,2)
             dfe = 1
         end
-        writefacet(file,tv[df,:],tv[dfe,:],rv[df,:]);
-        writefacet(file,tv[dfe,:],rv[df,:],rv[dfe,:]);
+        writefacet(file,tv[:,df],tv[:,dfe],rv[:,df]);
+        writefacet(file,tv[:,dfe],rv[:,df],rv[:,dfe]);
     end
     
     if dtf
-        for f = 2:size(tv,1)-1
-            writefacet(file, tv[1,:],tv[f,:],tv[f+1,:]);
+        for f = 2:size(tv,2)-1
+            writefacet(file, tv[:,1],tv[:,f],tv[:,f+1]);
         end
     end
 end
